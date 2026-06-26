@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Video Thumbnail Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #ff0000;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #ff0000;
+        }
+
+        button.get-btn {
+            padding: 15px 30px;
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        button.get-btn:hover {
+            background-color: #cc0000;
+        }
+
+        .error-msg {
+            color: red;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+
+        .thumbnail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+            display: none; /* Hidden by default */
+        }
+
+        .thumbnail-card {
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .thumbnail-card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .thumbnail-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            object-fit: cover;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.3s;
+            text-align: center;
+        }
+
+        .download-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Video Thumbnail Downloader</h1>
+        <p class="subtitle">YouTube video ka link paste karein aur enter dabayein!</p>
+
+        <div class="input-area">
+            <input type="text" id="videoUrl" placeholder="Yahan YouTube video ka URL/Link paste karein..." autocomplete="off">
+            <button class="get-btn" id="fetchBtn">Get Thumbnails</button>
+        </div>
+
+        <div class="error-msg" id="errorMsg">Janab, baraye meharbani durust YouTube link enter karein!</div>
+
+        <!-- Thumbnails Display Area -->
+        <div class="thumbnail-grid" id="thumbnailGrid">
+            
+            <!-- Ultra HD / Maximum Resolution -->
+            <div class="thumbnail-card">
+                <h3>Ultra HD (Maximum Quality)</h3>
+                <img id="imgMax" src="" alt="Max Quality">
+                <a id="btnMax" href="#" download="thumbnail_max.jpg" target="_blank" class="download-btn">Download HD</a>
+            </div>
+
+            <!-- Standard HD -->
+            <div class="thumbnail-card">
+                <h3>Standard HD (High Quality)</h3>
+                <img id="imgSd" src="" alt="SD Quality">
+                <a id="btnSd" href="#" download="thumbnail_sd.jpg" target="_blank" class="download-btn">Download SD</a>
+            </div>
+
+            <!-- Medium Quality -->
+            <div class="thumbnail-card">
+                <h3>Medium Quality</h3>
+                <img id="imgMq" src="" alt="Medium Quality">
+                <a id="btnMq" href="#" download="thumbnail_mq.jpg" target="_blank" class="download-btn">Download Medium</a>
+            </div>
+
+            <!-- Default Quality -->
+            <div class="thumbnail-card">
+                <h3>Default Quality (Low)</h3>
+                <img id="imgDefault" src="" alt="Default Quality">
+                <a id="btnDefault" href="#" download="thumbnail_default.jpg" target="_blank" class="download-btn">Download Default</a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const videoUrlInput = document.getElementById('videoUrl');
+        const fetchBtn = document.getElementById('fetchBtn');
+        const thumbnailGrid = document.getElementById('thumbnailGrid');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // Main Function to Extract ID and Show Thumbnails
+        function getThumbnails() {
+            const url = videoUrlInput.value.trim();
+            let videoId = '';
+
+            // YouTube URL regex to extract Video ID
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+
+            if (match && match[2].length === 11) {
+                videoId = match[2];
+                errorMsg.style.display = 'none';
+                
+                // Different Quality Links
+                const maxUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                const sdUrl = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`;
+                const mqUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+                const defaultUrl = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+
+                // Set Images Sources
+                document.getElementById('imgMax').src = maxUrl;
+                document.getElementById('imgSd').src = sdUrl;
+                document.getElementById('imgMq').src = mqUrl;
+                document.getElementById('imgDefault').src = defaultUrl;
+
+                // Set Download Links
+                document.getElementById('btnMax').href = maxUrl;
+                document.getElementById('btnSd').href = sdUrl;
+                document.getElementById('btnMq').href = mqUrl;
+                document.getElementById('btnDefault').href = defaultUrl;
+
+                // Show the Grid
+                thumbnailGrid.style.display = 'grid';
+            } else {
+                // Show Error if link is invalid
+                errorMsg.style.display = 'block';
+                thumbnailGrid.style.display = 'none';
+            }
+        }
+
+        // Button Click Event
+        fetchBtn.addEventListener('click', getThumbnails);
+
+        // Keyboard "Enter" Key Event
+        videoUrlInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getThumbnails();
+            }
+        });
+    </script>
+</body>
+</html>
